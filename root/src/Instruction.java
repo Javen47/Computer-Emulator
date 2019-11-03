@@ -4,9 +4,10 @@ public class Instruction {
     private Register destination;
     private Register source;
     private Register target;
-    private Integer immediateValue;
+    private Integer signedImmediateValue;
+    private Integer unsignedImmediateValue;
 
-    public Instruction() {
+    Instruction() {
 
     }
 
@@ -15,44 +16,52 @@ public class Instruction {
         this.target = target;
     }
 
-    public Operation getOperation() {
+    Operation getOperation() {
         return operation;
     }
 
-    public void setOperation(Operation operation) {
+    void setOperation(Operation operation) {
         this.operation = operation;
     }
 
-    public Register getDestination() {
+    Register getDestination() {
         return destination;
     }
 
-    public void setDestination(Register destination) {
+    void setDestination(Register destination) {
         this.destination = destination;
     }
 
-    public Register getSource() {
+    Register getSource() {
         return source;
     }
 
-    public void setSource(Register source) {
+    void setSource(Register source) {
         this.source = source;
     }
 
-    public Register getTarget() {
+    Register getTarget() {
         return target;
     }
 
-    public void setTarget(Register target) {
+    void setTarget(Register target) {
         this.target = target;
     }
 
-    public Integer getImmediateValue() {
-        return immediateValue;
+    public Integer getSignedImmediateValue() {
+        return signedImmediateValue;
     }
 
-    public void setImmediateValue(Integer immediateValue) {
-        this.immediateValue = immediateValue;
+    public void setSignedImmediateValue(Integer signedImmediateValue) {
+        this.signedImmediateValue = signedImmediateValue;
+    }
+
+    public Integer getUnsignedImmediateValue() {
+        return unsignedImmediateValue;
+    }
+
+    public void setUnsignedImmediateValue(Integer unsignedImmediateValue) {
+        this.unsignedImmediateValue = unsignedImmediateValue;
     }
 
     @Override
@@ -62,7 +71,10 @@ public class Instruction {
                 ", destination=" + destination +
                 ", source=" + source +
                 ", target=" + target +
-                ", immediateValue=" + immediateValue +
+                ", signedImmediateValue=" + signedImmediateValue +
+                ", unsignedImmediateValue=" + unsignedImmediateValue +
                 '}';
     }
+
+
 }

@@ -1,13 +1,13 @@
 import java.io.File;
 
-public class CommandRunner {
+class CommandRunner {
 
     private Clock clock;
     private DataMemory dataMemory;
     private InstructionMemory instructionMemory;
     private CPU cpu;
 
-    public CommandRunner(Clock clock, CPU cpu, DataMemory dataMemory, InstructionMemory instructionMemory) {
+    CommandRunner(Clock clock, CPU cpu, DataMemory dataMemory, InstructionMemory instructionMemory) {
         this.clock = clock;
         this.dataMemory = dataMemory;
         this.instructionMemory = instructionMemory;
@@ -20,7 +20,7 @@ public class CommandRunner {
      * @param command Command
      * @return String of output (if any)
      */
-    public String runCommand(Command command) {
+    String runCommand(Command command) {
         switch (command.getDevice()) {
             case CPU:
                 return runCPUCommand(command);
@@ -47,7 +47,7 @@ public class CommandRunner {
                 this.cpu.reset();
                 return "";
             case SET:
-                this.cpu.set(Register.valueOf(command.getParameters()[1]),
+                this.cpu.setRegisterValue(Register.valueOf(command.getParameters()[1]),
                         Integer.decode(command.getParameters()[2]));
                 return "";
             case DUMP:

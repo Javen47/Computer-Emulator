@@ -1,5 +1,5 @@
 public enum State {
 
-    WAIT, FETCH;
+    WAIT, FETCH, HALT;
 
 }

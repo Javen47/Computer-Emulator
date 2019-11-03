@@ -1,5 +1,5 @@
 public enum Operation {
 
-    LW, SW;
+    LW, SW, BEQ, INV, MUL, ADDI, ADD, HALT
 
 }

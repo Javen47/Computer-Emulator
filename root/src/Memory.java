@@ -1,9 +1,9 @@
 import java.io.File;
 import java.util.HashMap;
 
-public abstract class Memory {
+abstract class Memory {
 
-    protected HashMap<Integer, Integer> memory;
+    HashMap<Integer, Integer> memory;
     private int memoryCapacity = 0;
 
     /**
@@ -18,7 +18,7 @@ public abstract class Memory {
     }
 
     /**
-     * Causes all allocated memory to be set to zero.
+     * Causes all allocated memory to be setRegisterValue to zero.
      */
     void reset() {
         if (this.memory != null) {
