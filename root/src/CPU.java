@@ -1,13 +1,12 @@
 class CPU {
 
     //Constants
-    private static final Boolean DEBUG_MODE = false;
     private static final int EXE_WAIT_TIME_ONE = 1;
     private static final int EXE_WAIT_TIME_TWO = 2;
-    private static final int EXE_WAIT_TIME_FIVE = 5;
 
     //Registers
     private int PC = 0;
+    private int TC = 0;
     private int RA = 0;
     private int RB = 0;
     private int RC = 0;
@@ -18,24 +17,31 @@ class CPU {
     private int RH = 0;
 
     //Memory
-    private DataMemory dataMemory;
+    private Cache cache;
     private InstructionMemory instructionMemory;
+    private IO inputOutput;
 
     //Memory Access
     private int exeCounters = 1;
     private int exeCountersMax = -1;
     private State currentState = State.FETCH;
 
-    CPU(InstructionMemory instructionMemory, DataMemory dataMemory) {
+    CPU(InstructionMemory instructionMemory, Cache cache, IO inputOutput) {
         this.instructionMemory = instructionMemory;
-        this.dataMemory = dataMemory;
+        this.cache = cache;
+        this.inputOutput = inputOutput;
     }
 
     /**
      * Sets all register values to be 0.
      */
     void reset() {
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Resetting CPU");
+        }
+
         this.PC = 0;
+        this.TC = 0;
         this.RA = 0;
         this.RB = 0;
         this.RC = 0;
@@ -44,6 +50,7 @@ class CPU {
         this.RF = 0;
         this.RG = 0;
         this.RH = 0;
+        this.currentState = State.FETCH;
     }
 
     /**
@@ -56,6 +63,9 @@ class CPU {
         switch (register) {
             case PC:
                 this.PC = hexByte;
+                break;
+            case TC:
+                this.TC = hexByte;
                 break;
             case RA:
                 this.RA = hexByte;
@@ -94,6 +104,8 @@ class CPU {
         switch (register) {
             case PC:
                 return this.PC;
+            case TC:
+                return this.TC;
             case RA:
                 return this.RA;
             case RB:
@@ -123,31 +135,46 @@ class CPU {
     String dump() {
         final StringBuilder builder = new StringBuilder();
         builder.append("PC: ");
-        builder.append(createDumpRow(this.PC));
+        builder.append(cs3421_emul.createDumpRow(this.PC));
+        builder.append('\n');
 
         builder.append("RA: ");
-        builder.append(createDumpRow(this.RA));
+        builder.append(cs3421_emul.createDumpRow(this.RA));
+        builder.append('\n');
 
         builder.append("RB: ");
-        builder.append(createDumpRow(this.RB));
+        builder.append(cs3421_emul.createDumpRow(this.RB));
+        builder.append('\n');
 
         builder.append("RC: ");
-        builder.append(createDumpRow(this.RC));
+        builder.append(cs3421_emul.createDumpRow(this.RC));
+        builder.append('\n');
 
         builder.append("RD: ");
-        builder.append(createDumpRow(this.RD));
+        builder.append(cs3421_emul.createDumpRow(this.RD));
+        builder.append('\n');
 
         builder.append("RE: ");
-        builder.append(createDumpRow(this.RE));
+        builder.append(cs3421_emul.createDumpRow(this.RE));
+        builder.append('\n');
 
         builder.append("RF: ");
-        builder.append(createDumpRow(this.RF));
+        builder.append(cs3421_emul.createDumpRow(this.RF));
+        builder.append('\n');
 
         builder.append("RG: ");
-        builder.append(createDumpRow(this.RG));
+        builder.append(cs3421_emul.createDumpRow(this.RG));
+        builder.append('\n');
 
         builder.append("RH: ");
-        builder.append(createDumpRow(this.RH));
+        builder.append(cs3421_emul.createDumpRow(this.RH));
+        builder.append('\n');
+
+        builder.append("TC: ");
+        builder.append(this.TC);
+        builder.append('\n');
+
+        //builder.append(cache.dump());
 
         return builder.toString();
     }
@@ -156,14 +183,27 @@ class CPU {
      * Calls appropriate instructions at PC, increments PC.
      */
     void tick() {
+
+        //Checking IO Scheduled Events
+        this.inputOutput.checkEventSchedule();
+
         //HALT instructions
         if (this.currentState == State.HALT) {
             return;
         }
 
+        //Increment Tick Counter if not halted
+        this.TC++;
+
+        //Instruction
+        final Instruction instruction = AssemblyReader.createInstruction(this.instructionMemory.get(this.PC));
+
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Performing tick for operation: " + instruction.getOperation());
+        }
+
         //Fetch instructions
         if (this.currentState == State.FETCH){
-            final Instruction instruction = AssemblyReader.createInstruction(this.instructionMemory.get(this.PC));
             this.exeCounters = 1;
             this.currentState = State.WAIT;
             if (instruction != null) {
@@ -173,7 +213,6 @@ class CPU {
 
         //Wait instructions
         if (this.exeCounters == this.exeCountersMax) {
-            final Instruction instruction = AssemblyReader.createInstruction(this.instructionMemory.get(this.PC));
             this.determineOperationFunction(instruction);
         } else {
             this.exeCounters++;
@@ -186,6 +225,11 @@ class CPU {
      * @param instruction Instruction
      */
     private void determineOperationFunction(Instruction instruction) {
+
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Determining operation for instruction: " + instruction);
+        }
+
         if (instruction != null) {
             switch (instruction.getOperation()) {
                 case LW:
@@ -216,6 +260,11 @@ class CPU {
         }
         this.currentState = State.FETCH;
         this.PC++;
+
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Incrementing PC for operation " + instruction.getOperation() + '\n');
+        }
+
     }
 
     /**
@@ -224,18 +273,25 @@ class CPU {
      * @param instruction Instruction
      */
     private void loadWord(Instruction instruction) {
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Loading word for instruction: " + instruction);
+        }
         this.setRegisterValue(
                 instruction.getDestination(),
-                this.dataMemory.get(this.getRegisterValue(instruction.getTarget())));
+                this.cache.read(this.getRegisterValue(instruction.getTarget())));
     }
 
     /**
      * Stores a value into DataMemory from a source register at the index stored in a target register.
+     *
      * @param instruction instruction
      */
     private void saveWord(Instruction instruction) {
-        this.dataMemory.set(
-                this.getRegisterValue(instruction.getTarget()), 1,
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Saving word for instruction: " + instruction);
+        }
+        this.cache.write(
+                this.getRegisterValue(instruction.getTarget()),
                 this.getRegisterValue(instruction.getSource()));
     }
 
@@ -246,11 +302,10 @@ class CPU {
      */
     private void add(Instruction instruction) {
         final int addedValue = this.getRegisterValue(instruction.getSource()) + this.getRegisterValue(instruction.getTarget());
-        this.setRegisterValue(instruction.getDestination(), addedValue);
-
-        if (DEBUG_MODE) {
+        if (cs3421_emul.DEBUG_MODE) {
             System.out.println("adding: " + addedValue);
         }
+        this.setRegisterValue(instruction.getDestination(), addedValue);
     }
 
     /**
@@ -259,12 +314,16 @@ class CPU {
      * @param instruction Instruction
      */
     private void addImmediate(Instruction instruction) {
-        final int addedValue = this.getRegisterValue(instruction.getSource()) + instruction.getSignedImmediateValue();
+        int addedValue = this.getRegisterValue(instruction.getSource()) + instruction.getSignedImmediateValue();
+        if (addedValue == -1) {
+            addedValue = 255;
+        }
+
         this.setRegisterValue(instruction.getDestination(), addedValue);
 
-        if (DEBUG_MODE) {
-            System.out.println("adding i: " + addedValue);
-            System.out.println("new reg value: " + getRegisterValue(instruction.getDestination()));
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("Adding signed immediate: " + addedValue);
+            System.out.println("New register value at " + instruction.getDestination() + ": " + getRegisterValue(instruction.getDestination()));
         }
     }
 
@@ -280,7 +339,7 @@ class CPU {
         final int upperNibble = Integer.parseInt(binString.substring(0, 4) ,2);
         this.setRegisterValue(instruction.getDestination(), lowerNibble * upperNibble);
 
-        if (DEBUG_MODE) {
+        if (cs3421_emul.DEBUG_MODE) {
             System.out.println("multiply to int: " + lowerNibble * upperNibble);
         }
     }
@@ -302,7 +361,7 @@ class CPU {
         }
         this.setRegisterValue(instruction.getDestination(), Integer.parseInt(invBuilder.toString(), 2));
 
-        if (DEBUG_MODE) {
+        if (cs3421_emul.DEBUG_MODE) {
             System.out.println("inverting: " + binString);
         }
     }
@@ -319,7 +378,7 @@ class CPU {
         } else {
             this.PC++;
         }
-        if (DEBUG_MODE) {
+        if (cs3421_emul.DEBUG_MODE) {
             System.out.println("BEQ: " + getRegisterValue(instruction.getSource()) + ", " + getRegisterValue(instruction.getTarget()));
         }
     }
@@ -331,19 +390,9 @@ class CPU {
         this.PC++;
         this.currentState = State.HALT;
 
-        if (DEBUG_MODE) {
-            System.out.println("Halting");
+        if (cs3421_emul.DEBUG_MODE) {
+            System.out.println("\nHalting");
         }
-    }
-
-    /**
-     * Converts integers into 0x## hex format.
-     *
-     * @param value int
-     * @return Hex String
-     */
-    private String createDumpRow(int value) {
-        return "0x" + String.format("%02x", value).toUpperCase() + "\n";
     }
 
     /**
@@ -369,9 +418,9 @@ class CPU {
                     return EXE_WAIT_TIME_ONE;
                 }
             case LW:
-                return EXE_WAIT_TIME_FIVE;
+                return this.cache.determineCacheOperationTickTime(this.getRegisterValue(instruction.getTarget()), true);
             case SW:
-                return EXE_WAIT_TIME_FIVE;
+                return this.cache.determineCacheOperationTickTime(this.getRegisterValue(instruction.getTarget()), false);
             case HALT:
                 return EXE_WAIT_TIME_ONE;
         }

@@ -6,12 +6,16 @@ class CommandRunner {
     private DataMemory dataMemory;
     private InstructionMemory instructionMemory;
     private CPU cpu;
+    private Cache cache;
+    private IO inputOutput;
 
-    CommandRunner(Clock clock, CPU cpu, DataMemory dataMemory, InstructionMemory instructionMemory) {
+    CommandRunner(Clock clock, CPU cpu, DataMemory dataMemory, InstructionMemory instructionMemory, Cache cache, IO inputOutput) {
         this.clock = clock;
         this.dataMemory = dataMemory;
         this.instructionMemory = instructionMemory;
         this.cpu = cpu;
+        this.cache = cache;
+        this.inputOutput = inputOutput;
     }
 
     /**
@@ -30,6 +34,55 @@ class CommandRunner {
                 return runInstructionMemoryCommand(command);
             case CLOCK:
                 return runClockCommand(command);
+            case CACHE:
+                return runCacheCommand(command);
+            case IO:
+                return runIOCommand(command);
+            default:
+                return "";
+        }
+    }
+
+    /**
+     * Determines what option to run for given IO command.
+     *
+     * @param command IO Command
+     * @return String of output (if any)
+     */
+    private String runIOCommand(Command command) {
+        switch (command.getOption()) {
+            case RESET:
+                this.inputOutput.reset();
+                return "";
+            case LOAD:
+                this.inputOutput.load(new File(command.getParameters()[0]));
+                return "";
+            case DUMP:
+                return this.inputOutput.dump();
+            default:
+                return "";
+        }
+    }
+
+    /**
+     * Determines what option to run for given Cache command.
+     *
+     * @param command Cache Command
+     * @return String of output (if any)
+     */
+    private String runCacheCommand(Command command) {
+        switch (command.getOption()) {
+            case ON:
+                this.cache.on();
+                return "";
+            case OFF:
+                this.cache.off();
+                return "";
+            case RESET:
+                this.cache.reset();
+                return "";
+            case DUMP:
+                return this.cache.dump();
             default:
                 return "";
         }

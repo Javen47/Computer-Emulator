@@ -79,6 +79,11 @@ public class InputReader {
             case ("cpu"):
                 command.setDevice(Device.CPU);
                 break;
+            case ("cache"):
+                command.setDevice(Device.CACHE);
+                break;
+            case ("iodev"):
+                command.setDevice(Device.IO);
         }
 
         command.setOption(Option.valueOf(words[1].toUpperCase()));

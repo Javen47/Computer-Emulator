@@ -1,7 +1,5 @@
 class AssemblyReader {
 
-    private final static boolean DEBUG_MODE = false;
-
     private final static int BITMASK_THREE = 7;
     private final static int BITMASK_EIGHT = 255;
 
@@ -49,7 +47,7 @@ class AssemblyReader {
             instruction.setUnsignedImmediateValue(null);
         }
 
-        if (DEBUG_MODE) {
+        if (1 == 0) {
             System.out.println();
             String binString = Integer.toBinaryString(hexValue);
             if (binString.length() < 20) {
